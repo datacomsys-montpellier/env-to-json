@@ -1,0 +1,14 @@
+{
+  "name": "@datacomsys-montpellier/env-to-json",
+  "version": "1.0.0",
+  "description": "Convert .env files to JSON format",
+  "author": "DataComSys Montpellier",
+  "license": "MIT",
+  "bin": {
+    "envToJson": "./bin/cli.mjs"
+  },
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  }
+}
