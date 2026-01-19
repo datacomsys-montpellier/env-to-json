@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 const [, , envPathArg, outputPathArg] = process.argv;
 
 if (!envPathArg || !outputPathArg) {
-  console.error("Usage: envConvert <path/to/.env> <path/to/output.json>");
+  console.error("Usage: envToJson <path/to/.env> <path/to/output.json>");
   process.exit(1);
 }
 
