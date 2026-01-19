@@ -7,13 +7,13 @@ This package converts a given .env file to a JSON file.
 We can use the package via npx for a one-timer execution:
 
 ```bash
-npx @datacomsys-montpellier/env-to-json <path/to/input.env> <path/to/output.json>
+npx git+https://github.com/datacomsys-montpellier/env-to-json.git <path/to/input.env> <path/to/output.json>
 ```
 
 Or we can install it globally:
 
 ```bash
-npm install -g @datacomsys-montpellier/env-to-json
+npm install -g git+https://github.com/datacomsys-montpellier/env-to-json.git
 ```
 
 Then we can run the command:
