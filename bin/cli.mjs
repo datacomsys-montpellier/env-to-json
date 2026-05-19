@@ -11,11 +11,26 @@ if (!envPathArg || !outputPathArg) {
   process.exit(1);
 }
 
+/**
+ * Expand a leading "~" to the current user's home directory.
+ * @param {string} p - Input path that may start with "~".
+ * @returns {string} Expanded absolute/relative path.
+ */
 // Support "~" home dir expansion
-const expandPath = (p) =>
-  p.startsWith("~")
-    ? path.join(process.env.HOME || process.env.USERPROFILE, p.slice(1))
-    : p;
+const expandPath = (p) => {
+  if (!p.startsWith("~")) {
+    return p;
+  }
+
+  /** @type {string | undefined} */
+  const homeDir = process.env.HOME ?? process.env.USERPROFILE;
+
+  if (!homeDir) {
+    throw new Error("Cannot expand '~': HOME/USERPROFILE is not set.");
+  }
+
+  return path.join(homeDir, p.slice(1));
+};
 
 const envPath = expandPath(envPathArg);
 const outputPath = expandPath(outputPathArg);
@@ -26,30 +41,23 @@ if (!fs.existsSync(envPath)) {
   process.exit(1);
 }
 
-// Find an optional file named after the .env variable NODE_ENV (e.g. .env.development)
-const nodeEnv = process.env.NODE_ENV;
+const envContent = fs.readFileSync(envPath);
+const baseEnv = dotenv.parse(envContent);
+
+// Prefer shell NODE_ENV, but fall back to NODE_ENV from the base .env file.
+const nodeEnv = process.env.NODE_ENV || baseEnv.NODE_ENV;
+
+let env = baseEnv;
 if (nodeEnv) {
-  const envSpecificPath = envPath.replace(/\.env$/, `.env.${nodeEnv}`);
+  const envSpecificPath = getEnvSpecificPath(envPath, nodeEnv);
   console.log(`Looking for environment-specific file: ${envSpecificPath}`);
   if (fs.existsSync(envSpecificPath)) {
     console.log(`Found environment-specific file: ${envSpecificPath}`);
-    // Merge the specific env file with the base env file, giving precedence to the specific one
-    const baseEnvContent = fs.readFileSync(envPath);
     const specificEnvContent = fs.readFileSync(envSpecificPath);
-    const baseEnv = dotenv.parse(baseEnvContent);
     const specificEnv = dotenv.parse(specificEnvContent);
-    const mergedEnv = { ...baseEnv, ...specificEnv };
-    // -- convert merged env to JSON and write output
-    const jsonObject = cleanupOutput(mergedEnv);
-    // --- Write output ---
-    fs.writeFileSync(outputPath, JSON.stringify(jsonObject, null, 2));
-    console.log(`✔ Successfully wrote merged JSON to ${outputPath}`);
-    process.exit(0);
+    env = { ...baseEnv, ...specificEnv };
   }
 }
-
-const envContent = fs.readFileSync(envPath);
-const env = dotenv.parse(envContent);
 
 // --- Convert to JSON ---
 const jsonObject = cleanupOutput(env);
@@ -69,4 +77,21 @@ function cleanupOutput(output) {
   return Object.fromEntries(
     Object.entries(output).map(([key, value]) => [key, value.replace(/\\n/g, "\n")]),
   );
+}
+
+/**
+ * Get the path to an environment-specific .env file based on the base .env path and the NODE_ENV value.
+ * @param {string} baseEnvPath - The path to the base .env file.
+ * @param {string} nodeEnv - The NODE_ENV value.
+ * @returns {string} - The path to the environment-specific .env file.
+ */
+function getEnvSpecificPath(baseEnvPath, nodeEnv) {
+  const dir = path.dirname(baseEnvPath);
+  const file = path.basename(baseEnvPath);
+
+  if (file === ".env") {
+    return path.join(dir, `.env.${nodeEnv}`);
+  }
+
+  return `${baseEnvPath}.${nodeEnv}`;
 }
