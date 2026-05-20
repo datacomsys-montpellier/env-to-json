@@ -74,9 +74,11 @@ process.exit(0);
  * @returns {Object} - The cleaned-up object with newlines replaced.
 */
 function cleanupOutput(output) {
-  return Object.fromEntries(
+  const cleaned =  Object.fromEntries(
     Object.entries(output).map(([key, value]) => [key, value.replace(/\\n/g, "\n")]),
   );
+  cleaned["DATABASE_URL"] = `postgresql://${cleaned["DB_USER"]}:${cleaned["DB_PASSWORD"]}@${cleaned["DB_HOST"]}:${cleaned["DB_PORT"]}/${cleaned["DB_NAME"]}?ssl=true`;
+  return cleaned;
 }
 
 /**
