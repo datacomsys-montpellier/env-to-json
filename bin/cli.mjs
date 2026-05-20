@@ -77,7 +77,11 @@ function cleanupOutput(output) {
   const cleaned =  Object.fromEntries(
     Object.entries(output).map(([key, value]) => [key, value.replace(/\\n/g, "\n")]),
   );
-  cleaned["DATABASE_URL"] = `postgresql://${cleaned["DB_USER"]}:${cleaned["DB_PASSWORD"]}@${cleaned["DB_HOST"]}:${cleaned["DB_PORT"]}/${cleaned["DB_NAME"]}?ssl=true`;
+  // If all the individual DB_* variables are present, construct a DATABASE_URL for convenience.
+  const databaseVariables = ["DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT", "DB_NAME"];
+  if (databaseVariables.every((variable) => cleaned[variable])) {
+    cleaned["DATABASE_URL"] = `postgresql://${cleaned["DB_USER"]}:${cleaned["DB_PASSWORD"]}@${cleaned["DB_HOST"]}:${cleaned["DB_PORT"]}/${cleaned["DB_NAME"]}?ssl=true`;
+  }
   return cleaned;
 }
 
